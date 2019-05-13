@@ -2,9 +2,9 @@
 # Summary
 A functional approach to handling network responses in Swift:
 
-- There is a tendency to conflate how a UI responds to network requests simply because the API conventions make this the most obvious solution.
+- There is a tendency to conflate how a UI responds to network requests simply because the API conventions make it the most obvious solution.
 - The network response triplet of (Data?, URLResponse?, Error?) require specific processing to ultimately determine if the network request was successful and optionally extract the response from the HTTP body (data).
-- This response-handling code is combined with UI processing code, which can lead to messy, hard-to-read code.
+- This response-handling code is combined with UI processing code, which is messy and hard to scale to more scenarios.
 
 ## tl;dr
 

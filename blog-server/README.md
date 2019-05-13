@@ -1,8 +1,12 @@
 # blog-server
 
 This is a simple service that hosts "blog posts". It's written in Node, but you don't
-really need to know how it works internally. All you need to know is it provides one
-simple endpoint for reading blog posts:
+really need to know how it works internally. All you need to know is it provides two
+simple endpoints for reading blog posts. One for listing all the posts:
+
+    localhost:3000/api/list
+
+And another for reading a specific post:
 
     localhost:3000/api/read/{postId}
 
