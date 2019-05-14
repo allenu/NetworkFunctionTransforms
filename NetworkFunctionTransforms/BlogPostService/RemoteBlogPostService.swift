@@ -58,8 +58,3 @@ class RemoteBlogPostService: BlogPostService {
         }
     }
 }
-
-protocol TransformGenerator {
-    static func createRequest() -> (() -> URLRequest)
-    static func createResponse<T>() -> ((Data?, URLResponse?, Error?) -> T)
-}
