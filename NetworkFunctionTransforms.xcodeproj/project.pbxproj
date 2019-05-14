@@ -22,6 +22,7 @@
 		B7D53EF8228942390050AC27 /* PostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D53EF7228942390050AC27 /* PostViewController.swift */; };
 		B7D53EFA228942520050AC27 /* TraditionalPostListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D53EF9228942520050AC27 /* TraditionalPostListViewController.swift */; };
 		B7D53EFC2289426D0050AC27 /* StartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D53EFB2289426D0050AC27 /* StartViewController.swift */; };
+		B7D53EFE228A6BA20050AC27 /* AddPost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D53EFD228A6BA10050AC27 /* AddPost.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		B7D53EF7228942390050AC27 /* PostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewController.swift; sourceTree = "<group>"; };
 		B7D53EF9228942520050AC27 /* TraditionalPostListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraditionalPostListViewController.swift; sourceTree = "<group>"; };
 		B7D53EFB2289426D0050AC27 /* StartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartViewController.swift; sourceTree = "<group>"; };
+		B7D53EFD228A6BA10050AC27 /* AddPost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPost.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +108,7 @@
 				B7D53EE9228940C90050AC27 /* StandardNetworkResponse.swift */,
 				B7D53EEB228940E50050AC27 /* FetchPost.swift */,
 				B7D53EED228941750050AC27 /* FetchPostList.swift */,
+				B7D53EFD228A6BA10050AC27 /* AddPost.swift */,
 			);
 			path = Transforms;
 			sourceTree = "<group>";
@@ -189,6 +192,7 @@
 				B7D53EFC2289426D0050AC27 /* StartViewController.swift in Sources */,
 				B7D53EEC228940E50050AC27 /* FetchPost.swift in Sources */,
 				B7D53EFA228942520050AC27 /* TraditionalPostListViewController.swift in Sources */,
+				B7D53EFE228A6BA20050AC27 /* AddPost.swift in Sources */,
 				B7D53EF2228941CB0050AC27 /* RemoteBlogPostService.swift in Sources */,
 				B7D53EEA228940C90050AC27 /* StandardNetworkResponse.swift in Sources */,
 				B7D53EF6228942220050AC27 /* PostListViewController.swift in Sources */,

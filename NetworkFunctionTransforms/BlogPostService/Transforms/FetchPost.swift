@@ -42,7 +42,7 @@ enum FetchPostFailureReason {
     
     // The app made a bad request. This is very bad since it means the server is
     // expecting a new type of request we don't know about.
-    case malformedRequest
+    case badRequest
     
     // Catch-all for other HTTP status codes that we didn't expect.
     case nonOkHttpStatusCode(httpUrlResponse: HTTPURLResponse)
@@ -88,6 +88,9 @@ func createFetchPostResponse(data: Data?, httpUrlResponse: HTTPURLResponse) -> F
     let successStatusCode = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
     guard successStatusCode else {
         switch httpUrlResponse.statusCode {
+        case 400:
+            return .failure(reason: .badRequest)
+            
         case 404:
             return .failure(reason: .missingPost)
             

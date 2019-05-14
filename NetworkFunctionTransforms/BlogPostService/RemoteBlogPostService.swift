@@ -11,6 +11,7 @@ import Foundation
 class RemoteBlogPostService: BlogPostService {
     var fetchPostTask: URLSessionDataTask?
     var fetchPostListTask: URLSessionDataTask?
+    var addPostTask: URLSessionDataTask?
     let baseUrl = URL(string: "http://localhost:3000")!
     
     func fetchPost(postId: Int, completionHandler: @escaping (FetchPostResponse) -> Void) {
@@ -40,4 +41,25 @@ class RemoteBlogPostService: BlogPostService {
         })
         fetchPostListTask?.resume()
     }
+    
+    func addPost(post: PostJsonStruct, completionHandler: @escaping (AddPostResponse) -> Void) {
+        if let addPostTask = addPostTask {
+            addPostTask.cancel()
+            self.addPostTask = nil
+        }
+        
+        DispatchQueue.global().async {
+            let request = createAddPostRequest(baseUrl: self.baseUrl, post: post)
+            self.addPostTask = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
+                let addPostResponse = createAddPostResponse(data: data, response: response, error: error)
+                completionHandler(addPostResponse)
+            })
+            self.addPostTask?.resume()
+        }
+    }
+}
+
+protocol TransformGenerator {
+    static func createRequest() -> (() -> URLRequest)
+    static func createResponse<T>() -> ((Data?, URLResponse?, Error?) -> T)
 }

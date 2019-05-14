@@ -14,7 +14,7 @@
 import Foundation
 
 class MockBlogPostService: BlogPostService {
-    static let posts: [PostJsonStruct] = [
+    var posts: [PostJsonStruct] = [
         PostJsonStruct(title: "Fake post 0 title", body: "Fake post 0 body"),
         PostJsonStruct(title: "Fake post 1 title: 2s delay", body: "Fake post 1 body"),
         PostJsonStruct(title: "Fake post 2 title: timeout", body: "Fake post 2 body"),
@@ -30,7 +30,7 @@ class MockBlogPostService: BlogPostService {
     func fetchPost(postId: Int, completionHandler: @escaping (FetchPostResponse) -> Void) {
         // Mock the fetch request by delaying 100ms and then calling the completionHandler.
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.1, execute: {
-            let response = MockBlogPostService.generateFetchPostResponse(for: postId)
+            let response = self.generateFetchPostResponse(for: postId)
             
             if postId == 1 {
                 // Special case, post 1 has a 2s delay to help test UI
@@ -47,22 +47,30 @@ class MockBlogPostService: BlogPostService {
         // To make this test more interesting, only respond after 2s
         let delay: TimeInterval = 2.0
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + delay, execute: {
-            let response = MockBlogPostService.generateFetchPostListResponse()
+            let response = self.generateFetchPostListResponse()
             completionHandler(response)
         })
     }
+
+    func addPost(post: PostJsonStruct, completionHandler: @escaping (AddPostResponse) -> Void) {
+        DispatchQueue.main.async {
+            let addedPost = PostJsonStruct(title: post.title + " (mocked)", body: post.body + " (mocked)")
+            self.posts.append(addedPost)
+            completionHandler(.success(post: addedPost))
+        }
+    }
     
     // Come up with a fake response for the given post requested.
-    static func generateFetchPostResponse(for postId: Int) -> FetchPostResponse {
+    func generateFetchPostResponse(for postId: Int) -> FetchPostResponse {
         let response: FetchPostResponse
         
         switch postId {
         case 0:
-            let post = MockBlogPostService.posts[0]
+            let post = posts[0]
             response = .success(post: post)
             
         case 1:
-            let post = MockBlogPostService.posts[1]
+            let post = posts[1]
             response = .success(post: post)
             
         case 2:
@@ -91,13 +99,14 @@ class MockBlogPostService: BlogPostService {
             response = .failure(reason: .standardNetworkFailure(reason: .requestCancelled))
             
         default:
-            fatalError("Not handled")
+            let post = posts[postId]
+            response = .success(post: post)
         }
         
         return response
     }
     
-    static func generateFetchPostListResponse() -> FetchPostListResponse {
-        return FetchPostListResponse.success(posts: MockBlogPostService.posts)
+    func generateFetchPostListResponse() -> FetchPostListResponse {
+        return FetchPostListResponse.success(posts: posts)
     }
 }

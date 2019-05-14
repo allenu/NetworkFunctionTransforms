@@ -11,4 +11,5 @@ import Foundation
 protocol BlogPostService {
     func fetchPost(postId: Int, completionHandler: @escaping (FetchPostResponse) -> Void)
     func fetchPostList(completionHandler: @escaping (FetchPostListResponse) -> Void)
+    func addPost(post: PostJsonStruct, completionHandler: @escaping (AddPostResponse) -> Void)
 }

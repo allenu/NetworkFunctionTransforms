@@ -19,12 +19,17 @@ class TraditionalPostListViewController: UITableViewController {
     var presentingPost: PostJsonStruct?
     var fetchPostTask: URLSessionDataTask?
     var fetchPostListTask: URLSessionDataTask?
+    var addPostTask: URLSessionDataTask?
     var posts: [PostJsonStruct] = []
+    var nextPostId = 0
     var isFetchingList = true
 
     override func viewDidLoad() {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellIdentifier)
         
+        let addBarButtonItem = UIBarButtonItem(title: "Add", style: .plain, target: self, action: #selector(didTapAddButton(sender:)))
+        navigationItem.rightBarButtonItem = addBarButtonItem
+
         fetchPostList()
     }
     
@@ -182,5 +187,51 @@ class TraditionalPostListViewController: UITableViewController {
         
         alertController.addAction(UIAlertAction(title: "Dismiss", style: .default, handler: nil))
         present(alertController, animated: true, completion: nil)
+    }
+
+    @objc func didTapAddButton(sender: Any) {
+        let post = PostJsonStruct(title: "New Post \(nextPostId)", body: "Body: \(nextPostId)")
+        nextPostId = nextPostId + 1
+
+        let url = URL(string: "http://localhost:3000/api/write/")
+        var request = URLRequest(url: url!, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        let encoder = JSONEncoder()
+        request.httpBody = try! encoder.encode(post)
+
+        addPostTask = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.showAlert(text: "Something is wrong with the network: \(error)")
+                    return
+                }
+                
+                guard let httpUrlResponse = response as? HTTPURLResponse else {
+                    self.showAlert(text: "Something is wrong with the network: response is not HTTPURLResponse")
+                    return
+                }
+                
+                guard let data = data else {
+                    self.showAlert(text: "Server isn't responding properly. No data.")
+                    return
+                }
+                
+                let okStatus = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
+                if okStatus {
+                    let decoder = JSONDecoder()
+                    if let post = try? decoder.decode(PostJsonStruct.self, from: data) {
+                        self.posts.append(post)
+                        self.tableView.reloadData()
+                    } else {
+                        self.showAlert(text: "We couldn't parse the server data: \(data)")
+                    }
+                } else {
+                    self.showAlert(text: "The server didn't respond properly.")
+                }
+            }
+        })
+        
+        addPostTask?.resume()
     }
 }

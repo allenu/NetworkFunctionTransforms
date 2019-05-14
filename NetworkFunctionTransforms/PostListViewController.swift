@@ -14,9 +14,13 @@ class PostListViewController: UITableViewController {
     var presentingPost: PostJsonStruct?
     var posts: [PostJsonStruct] = []
     var isFetchingList = true
+    var nextPostId: Int = 0
     
     override func viewDidLoad() {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellIdentifier)
+        
+        let addBarButtonItem = UIBarButtonItem(title: "Add", style: .plain, target: self, action: #selector(didTapAddButton(sender:)))
+        navigationItem.rightBarButtonItem = addBarButtonItem
 
         fetchPostList()
     }
@@ -113,7 +117,7 @@ class PostListViewController: UITableViewController {
         case .malformedData(let data):
             alertText = "We couldn't parse the server data: \(data)"
             
-        case .malformedRequest:
+        case .badRequest:
             alertText = "We made a bad request"
             
         case .missingData:
@@ -149,5 +153,22 @@ class PostListViewController: UITableViewController {
         
         alertController.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
         present(alertController, animated: true, completion: nil)
+    }
+    
+    @objc func didTapAddButton(sender: Any) {
+        let post = PostJsonStruct(title: "New Post \(nextPostId)", body: "Body: \(nextPostId)")
+        nextPostId = nextPostId + 1
+        service?.addPost(post: post, completionHandler: { response in
+            DispatchQueue.main.async {
+                switch response {
+                case .success(let returnedPost):
+                    self.posts.append(returnedPost)
+                    self.tableView.reloadData()
+                    
+                case .failure(let reason):
+                    self.showAlert(text: "We ran into an issue posting that: \(reason)")
+                }
+            }
+        })
     }
 }
