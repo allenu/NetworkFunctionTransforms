@@ -1,14 +1,14 @@
 # blog-server
 
 This is a simple service that hosts "blog posts". It's written in Node, but you don't
-really need to know how it works internally. All you need to know is it provides two
-simple endpoints for reading blog posts. One for listing all the posts:
+really need to know how it works internally. All you need to know is it provides three
+simple endpoints for listing, reading, and writing blog posts. For listing all the posts:
 
-    localhost:3000/api/list
+    GET localhost:3000/api/list
 
-And another for reading a specific post:
+For reading a specific post:
 
-    localhost:3000/api/read/{postId}
+    GET localhost:3000/api/read/{postId}
 
 where {postId} is the blog post to read. It will return a json "blog post" that has a Title and Body field.
 
@@ -40,6 +40,17 @@ behave differently based on the type of response.
 Note: use curl if you want to see the full HTTP response with headers include status code.
 
     curl -i http://localhost:3000/api/read/this-will-cause-400
+
+Finally, to write a new post (it's only stored in server memory, not to a persistent store, like a database):
+
+    POST http://localhost:3000/api/write/
+
+Where the body is a post like this:
+
+    {
+        "Title": "This is my title",
+        "Body":  "This is the body"
+    }
 
 # Installing and Running
 
