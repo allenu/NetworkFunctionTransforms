@@ -20,7 +20,7 @@ posts[4].Title = "Post 4: Will fake 404"
 app.use(bodyParser.json())
 
 app.use(function (req, res, next) {
-    console.log("%s %s %s\n", Date.now().toString(), req.originalUrl, JSON.stringify(req.headers))
+    console.log("%s %s %s %s\n", Date.now().toString(), req.method, req.originalUrl, JSON.stringify(req.headers))
     next()
 })
 
