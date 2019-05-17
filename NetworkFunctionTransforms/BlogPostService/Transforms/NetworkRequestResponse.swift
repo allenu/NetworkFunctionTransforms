@@ -9,7 +9,7 @@
 import Foundation
 
 protocol NetworkResponse {
-    init(data: Data?, response: URLResponse?, error: Error?)
+    init(standardNetworkResponse: StandardNetworkResponse)
 }
 
 protocol NetworkRequest {
@@ -28,19 +28,17 @@ struct NetworkPerformer {
     func dataTask<T: NetworkRequest>(request: T,
                                      completionHandler: @escaping (T.networkResponse) -> Void) -> URLSessionDataTask {
         let urlRequest = request.toURLRequest()
-        let task = urlSession.dataTask(with: urlRequest, completionHandler: { data, response, error in
-            completionHandler(T.networkResponse(data: data, response: response, error: error))
+        let task = dataTask(urlRequest: urlRequest, completionHandler: { standardNetworkResponse in
+            completionHandler(T.networkResponse(standardNetworkResponse: standardNetworkResponse))
         })
         return task
     }
     
-    /*
-    func dataTask(request: URLRequest,
+    private func dataTask(urlRequest: URLRequest,
                   completionHandler: @escaping (StandardNetworkResponse) -> Void) -> URLSessionDataTask {
-        let task = urlSession.dataTask(with: request, completionHandler: { data, response, error in
+        let task = urlSession.dataTask(with: urlRequest, completionHandler: { data, response, error in
             completionHandler(StandardNetworkResponse(data: data, response: response, error: error))
         })
         return task
     }
- */
 }

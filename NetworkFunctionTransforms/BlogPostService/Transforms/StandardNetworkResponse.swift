@@ -39,41 +39,44 @@ enum StandardNetworkFailureReason {
 // - if a success, it is guaranteed to have an HTTPURLResponse and possibly data
 // - if it fails, it will provide a reason for the failure
 enum StandardNetworkResponse {
-    case success(httpUrlResponse: HTTPURLResponse, data: Data?)
+    case success(data: Data?, httpUrlResponse: HTTPURLResponse)
     case failure(reason: StandardNetworkFailureReason)
     
-    static func from(data: Data?, response: URLResponse?, error: Error?) -> StandardNetworkResponse {
+    init(data: Data?, response: URLResponse?, error: Error?) {
         if let error = error {
             if let urlError = error as? URLError {
                 switch urlError.errorCode {
                 case NSURLErrorTimedOut:
-                    return .failure(reason: .timeout)
+                    self = .failure(reason: .timeout)
                     
                 case NSURLErrorCannotConnectToHost:
-                    return .failure(reason: .cannotConnectToHost)
+                    self = .failure(reason: .cannotConnectToHost)
                     
                 case NSURLErrorCannotFindHost:
-                    return .failure(reason: .hostNotFound)
+                    self = .failure(reason: .hostNotFound)
                     
                 case NSURLErrorCancelled:
-                    return .failure(reason: .requestCancelled)
+                    self = .failure(reason: .requestCancelled)
                     
                 default:
-                    return .failure(reason: .urlError(urlError))
+                    self = .failure(reason: .urlError(urlError))
                 }
             } else {
-                return .failure(reason: .genericError(error))
+                self = .failure(reason: .genericError(error))
             }
+            return
         }
         
         guard let response = response else {
-            return .failure(reason: .nilUrlResponse)
+            self = .failure(reason: .nilUrlResponse)
+            return
         }
         
         guard let httpUrlResponse = response as? HTTPURLResponse else {
-            return .failure(reason: .nonHttpUrlResponse(response))
+            self = .failure(reason: .nonHttpUrlResponse(response))
+            return
         }
         
-        return .success(httpUrlResponse: httpUrlResponse, data: data)
+        self = .success(data: data, httpUrlResponse: httpUrlResponse)
     }
 }

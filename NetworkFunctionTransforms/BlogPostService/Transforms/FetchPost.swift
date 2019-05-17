@@ -8,6 +8,9 @@
 
 import Foundation
 
+//
+// Request
+//
 struct PostJsonStruct: Codable {
     let title: String
     let body: String
@@ -18,6 +21,23 @@ struct PostJsonStruct: Codable {
     }
 }
 
+struct FetchPostRequest: NetworkRequest {
+    typealias networkResponse = FetchPostResponse
+    
+    let baseUrl: URL
+    let postId: Int
+    
+    func toURLRequest() -> URLRequest {
+        let url = baseUrl.appendingPathComponent("api/read/\(postId)")
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
+        request.httpMethod = "GET"
+        return request
+    }
+}
+
+//
+// Response
+//
 enum FetchPostFailureReason {
     case standardNetworkFailure(reason: StandardNetworkFailureReason)
     
@@ -55,65 +75,47 @@ enum FetchPostResponse: NetworkResponse {
     case success(post: PostJsonStruct)
     case failure(reason: FetchPostFailureReason)
     
-    init(data: Data?, response: URLResponse?, error: Error?) {
-        // First extract the standard response out and wrap the error if one is found. If no
-        // error, construct a response from the data and httpUrlResponse.
-        let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
+    init(standardNetworkResponse: StandardNetworkResponse) {
         switch standardNetworkResponse {
-        case .success(let httpUrlResponse, let data):
-            self = createFetchPostResponse(data: data, httpUrlResponse: httpUrlResponse)
+        case .success(let data, let httpUrlResponse):
+            self = FetchPostResponse(data: data, httpUrlResponse: httpUrlResponse)
             
         case .failure(let reason):
             self = .failure(reason: .standardNetworkFailure(reason: reason))
         }
     }
-}
-
-struct FetchPostRequest: NetworkRequest {
-    typealias networkResponse = FetchPostResponse
     
-    let baseUrl: URL
-    let postId: Int
-    
-    func toURLRequest() -> URLRequest {
-        let url = baseUrl.appendingPathComponent("api/read/\(postId)")
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
-        request.httpMethod = "GET"
-        return request
-    }
-}
-
-// Take a successful network response and turn it into a specific FetchPostResponse. This
-// itself may have an error that's only meaningful to the fetch post level.
-//
-// This will attempt to extract the PostJsonStruct from the response body (Data).
-func createFetchPostResponse(data: Data?, httpUrlResponse: HTTPURLResponse) -> FetchPostResponse {
-    let successStatusCode = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
-    guard successStatusCode else {
-        switch httpUrlResponse.statusCode {
-        case 400:
-            return .failure(reason: .badRequest)
-            
-        case 404:
-            return .failure(reason: .missingPost)
-            
-        case 500:
-            return .failure(reason: .serverError)
-            
-        default:
-            return .failure(reason: .nonOkHttpStatusCode(httpUrlResponse: httpUrlResponse))
+    init(data: Data?, httpUrlResponse: HTTPURLResponse) {
+        let successStatusCode = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
+        guard successStatusCode else {
+            switch httpUrlResponse.statusCode {
+            case 400:
+                self = .failure(reason: .badRequest)
+                
+            case 404:
+                self = .failure(reason: .missingPost)
+                
+            case 500:
+                self = .failure(reason: .serverError)
+                
+            default:
+                self = .failure(reason: .nonOkHttpStatusCode(httpUrlResponse: httpUrlResponse))
+            }
+            return
+        }
+        
+        guard let data = data else {
+            self = .failure(reason: .missingData)
+            return
+        }
+        
+        let decoder = JSONDecoder()
+        
+        if let post = try? decoder.decode(PostJsonStruct.self, from: data) {
+            self = .success(post: post)
+        } else {
+            self = .failure(reason: .malformedData(data))
         }
     }
-    
-    guard let data = data else {
-        return .failure(reason: .missingData)
-    }
-    
-    let decoder = JSONDecoder()
-    
-    if let post = try? decoder.decode(PostJsonStruct.self, from: data) {
-        return .success(post: post)
-    } else {
-        return .failure(reason: .malformedData(data))
-    }
+
 }

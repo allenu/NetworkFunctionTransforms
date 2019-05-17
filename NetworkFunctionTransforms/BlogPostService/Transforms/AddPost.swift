@@ -8,35 +8,9 @@
 
 import Foundation
 
-enum AddPostFailureReason {
-    case standardNetworkFailure(reason: StandardNetworkFailureReason)
-    
-    case missingData
-    case malformedData(Data)
-    case missingPost
-    case serverError
-    case badRequest
-    case nonOkHttpStatusCode(httpUrlResponse: HTTPURLResponse)
-}
-
-enum AddPostResponse: NetworkResponse {
-    case success(post: PostJsonStruct)
-    case failure(reason: AddPostFailureReason)
-    
-    init(data: Data?, response: URLResponse?, error: Error?) {
-        // First extract the standard response out and wrap the error if one is found. If no
-        // error, construct a response from the data and httpUrlResponse.
-        let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
-        switch standardNetworkResponse {
-        case .success(let httpUrlResponse, let data):
-            self = createAddPostResponse(data: data, httpUrlResponse: httpUrlResponse)
-            
-        case .failure(let reason):
-            self = .failure(reason: .standardNetworkFailure(reason: reason))
-        }
-    }
-}
-
+//
+// Request
+//
 struct AddPostRequest: NetworkRequest {
     typealias networkResponse = AddPostResponse
     
@@ -57,33 +31,64 @@ struct AddPostRequest: NetworkRequest {
     }
 }
 
-func createAddPostResponse(data: Data?, httpUrlResponse: HTTPURLResponse) -> AddPostResponse {
-    let successStatusCode = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
-    guard successStatusCode else {
-        switch httpUrlResponse.statusCode {
-        case 400:
-            return .failure(reason: .badRequest)
+//
+// Response
+//
+enum AddPostFailureReason {
+    case standardNetworkFailure(reason: StandardNetworkFailureReason)
+    
+    case missingData
+    case malformedData(Data)
+    case missingPost
+    case serverError
+    case badRequest
+    case nonOkHttpStatusCode(httpUrlResponse: HTTPURLResponse)
+}
+
+enum AddPostResponse: NetworkResponse {
+    case success(post: PostJsonStruct)
+    case failure(reason: AddPostFailureReason)
+    
+    init(standardNetworkResponse: StandardNetworkResponse) {
+        switch standardNetworkResponse {
+        case .success(let data, let httpUrlResponse):
+            self = AddPostResponse(data: data, httpUrlResponse: httpUrlResponse)
             
-        case 404:
-            return .failure(reason: .missingPost)
-            
-        case 500:
-            return .failure(reason: .serverError)
-            
-        default:
-            return .failure(reason: .nonOkHttpStatusCode(httpUrlResponse: httpUrlResponse))
+        case .failure(let reason):
+            self = .failure(reason: .standardNetworkFailure(reason: reason))
         }
     }
-    
-    guard let data = data else {
-        return .failure(reason: .missingData)
-    }
-    
-    let decoder = JSONDecoder()
-    
-    if let post = try? decoder.decode(PostJsonStruct.self, from: data) {
-        return .success(post: post)
-    } else {
-        return .failure(reason: .malformedData(data))
+
+    init(data: Data?, httpUrlResponse: HTTPURLResponse) {
+        let successStatusCode = httpUrlResponse.statusCode >= 200 && httpUrlResponse.statusCode < 300
+        guard successStatusCode else {
+            switch httpUrlResponse.statusCode {
+            case 400:
+                self = .failure(reason: .badRequest)
+                
+            case 404:
+                self = .failure(reason: .missingPost)
+                
+            case 500:
+                self = .failure(reason: .serverError)
+                
+            default:
+                self = .failure(reason: .nonOkHttpStatusCode(httpUrlResponse: httpUrlResponse))
+            }
+            return
+        }
+        
+        guard let data = data else {
+            self = .failure(reason: .missingData)
+            return
+        }
+        
+        let decoder = JSONDecoder()
+        
+        if let post = try? decoder.decode(PostJsonStruct.self, from: data) {
+            self = .success(post: post)
+        } else {
+            self = .failure(reason: .malformedData(data))
+        }
     }
 }
