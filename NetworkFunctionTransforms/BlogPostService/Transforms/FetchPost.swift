@@ -51,32 +51,35 @@ enum FetchPostFailureReason {
 // A fetch will either succeed or fail. If there's a failure, the failure
 // reason can be analyzed and reacted to accordingly. If the fetch succeded,
 // get the post from the success case.
-enum FetchPostResponse {
+enum FetchPostResponse: NetworkResponse {
     case success(post: PostJsonStruct)
     case failure(reason: FetchPostFailureReason)
+    
+    init(data: Data?, response: URLResponse?, error: Error?) {
+        // First extract the standard response out and wrap the error if one is found. If no
+        // error, construct a response from the data and httpUrlResponse.
+        let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
+        switch standardNetworkResponse {
+        case .success(let httpUrlResponse, let data):
+            self = createFetchPostResponse(data: data, httpUrlResponse: httpUrlResponse)
+            
+        case .failure(let reason):
+            self = .failure(reason: .standardNetworkFailure(reason: reason))
+        }
+    }
 }
 
-//
-// Fetch Post Network Function Transforms
-//
-
-func createFetchPostRequest(baseUrl: URL, postId: Int) -> URLRequest {
-    let url = baseUrl.appendingPathComponent("api/read/\(postId)")
-    var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
-    request.httpMethod = "GET"
-    return request
-}
-
-func createFetchPostResponse(data: Data?, response: URLResponse?, error: Error?) -> FetchPostResponse {
-    // First extract the standard response out and wrap the error if one is found. If no
-    // error, construct a response from the data and httpUrlResponse.
-    let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
-    switch standardNetworkResponse {
-    case .success(let httpUrlResponse, let data):
-        return createFetchPostResponse(data: data, httpUrlResponse: httpUrlResponse)
-        
-    case .failure(let reason):
-        return .failure(reason: .standardNetworkFailure(reason: reason))
+struct FetchPostRequest: NetworkRequest {
+    typealias networkResponse = FetchPostResponse
+    
+    let baseUrl: URL
+    let postId: Int
+    
+    func toURLRequest() -> URLRequest {
+        let url = baseUrl.appendingPathComponent("api/read/\(postId)")
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
+        request.httpMethod = "GET"
+        return request
     }
 }
 

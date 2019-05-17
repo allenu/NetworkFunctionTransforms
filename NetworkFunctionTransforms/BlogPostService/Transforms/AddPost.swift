@@ -19,34 +19,41 @@ enum AddPostFailureReason {
     case nonOkHttpStatusCode(httpUrlResponse: HTTPURLResponse)
 }
 
-enum AddPostResponse {
+enum AddPostResponse: NetworkResponse {
     case success(post: PostJsonStruct)
     case failure(reason: AddPostFailureReason)
+    
+    init(data: Data?, response: URLResponse?, error: Error?) {
+        // First extract the standard response out and wrap the error if one is found. If no
+        // error, construct a response from the data and httpUrlResponse.
+        let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
+        switch standardNetworkResponse {
+        case .success(let httpUrlResponse, let data):
+            self = createAddPostResponse(data: data, httpUrlResponse: httpUrlResponse)
+            
+        case .failure(let reason):
+            self = .failure(reason: .standardNetworkFailure(reason: reason))
+        }
+    }
 }
 
-func createAddPostRequest(baseUrl: URL, post: PostJsonStruct) -> URLRequest {
-    let url = baseUrl.appendingPathComponent("api/write/")
-    var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
-    request.httpMethod = "POST"
-    request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+struct AddPostRequest: NetworkRequest {
+    typealias networkResponse = AddPostResponse
     
-    let encoder = JSONEncoder()
-    let data = try! encoder.encode(post)
-    request.httpBody = data
+    let baseUrl: URL
+    let post: PostJsonStruct
     
-    return request
-}
-
-func createAddPostResponse(data: Data?, response: URLResponse?, error: Error?) -> AddPostResponse {
-    // First extract the standard response out and wrap the error if one is found. If no
-    // error, construct a response from the data and httpUrlResponse.
-    let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
-    switch standardNetworkResponse {
-    case .success(let httpUrlResponse, let data):
-        return createAddPostResponse(data: data, httpUrlResponse: httpUrlResponse)
+    func toURLRequest() -> URLRequest {
+        let url = baseUrl.appendingPathComponent("api/write/")
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-    case .failure(let reason):
-        return .failure(reason: .standardNetworkFailure(reason: reason))
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode(post)
+        request.httpBody = data
+        
+        return request
     }
 }
 

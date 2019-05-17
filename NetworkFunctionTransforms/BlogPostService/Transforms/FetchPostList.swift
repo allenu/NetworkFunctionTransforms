@@ -16,30 +16,31 @@ enum FetchPostListFailureReason {
     case nonOkHttpStatusCode(httpUrlResponse: HTTPURLResponse)
 }
 
-enum FetchPostListResponse {
+enum FetchPostListResponse: NetworkResponse {
     case success(posts: [PostJsonStruct])
     case failure(reason: FetchPostListFailureReason)
+    
+    init(data: Data?, response: URLResponse?, error: Error?) {
+        let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
+        switch standardNetworkResponse {
+        case .success(let httpUrlResponse, let data):
+            self = createFetchPostListResponse(data: data, httpUrlResponse: httpUrlResponse)
+            
+        case .failure(let reason):
+            self = .failure(reason: .standardNetworkFailure(reason: reason))
+        }
+    }
 }
 
-//
-// Fetch Post List Network Function Transforms
-//
-
-func createFetchPostListRequest(baseUrl: URL) -> URLRequest {
-    let url = baseUrl.appendingPathComponent("api/list")
-    var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
-    request.httpMethod = "GET"
-    return request
-}
-
-func createFetchPostListResponse(data: Data?, response: URLResponse?, error: Error?) -> FetchPostListResponse {
-    let standardNetworkResponse = StandardNetworkResponse.from(data: data, response: response, error: error)
-    switch standardNetworkResponse {
-    case .success(let httpUrlResponse, let data):
-        return createFetchPostListResponse(data: data, httpUrlResponse: httpUrlResponse)
-        
-    case .failure(let reason):
-        return .failure(reason: .standardNetworkFailure(reason: reason))
+struct FetchPostListRequest: NetworkRequest {
+    typealias networkResponse = FetchPostListResponse
+    let baseUrl: URL
+    
+    func toURLRequest() -> URLRequest {
+        let url = baseUrl.appendingPathComponent("api/list")
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4.0)
+        request.httpMethod = "GET"
+        return request
     }
 }
 

@@ -14,17 +14,16 @@ class RemoteBlogPostService: BlogPostService {
     var addPostTask: URLSessionDataTask?
     let baseUrl = URL(string: "http://localhost:3000")!
     
+    let networkPerformer = NetworkPerformer(urlSession: URLSession.shared)
+    
     func fetchPost(postId: Int, completionHandler: @escaping (FetchPostResponse) -> Void) {
         if let fetchPostTask = fetchPostTask {
             fetchPostTask.cancel()
             self.fetchPostTask = nil
         }
-        
-        let request = createFetchPostRequest(baseUrl: baseUrl, postId: postId)
-        fetchPostTask = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
-            let fetchPostResponse = createFetchPostResponse(data: data, response: response, error: error)
-            completionHandler(fetchPostResponse)
-        })
+
+        let request = FetchPostRequest(baseUrl: baseUrl, postId: postId)
+        fetchPostTask = networkPerformer.dataTask(request: request, completionHandler: completionHandler)
         fetchPostTask?.resume()
     }
     
@@ -34,11 +33,8 @@ class RemoteBlogPostService: BlogPostService {
             self.fetchPostListTask = nil
         }
         
-        let request = createFetchPostListRequest(baseUrl: baseUrl)
-        fetchPostListTask = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
-            let fetchPostListResponse = createFetchPostListResponse(data: data, response: response, error: error)
-            completionHandler(fetchPostListResponse)
-        })
+        let request = FetchPostListRequest(baseUrl: baseUrl)
+        fetchPostListTask = networkPerformer.dataTask(request: request, completionHandler: completionHandler)
         fetchPostListTask?.resume()
     }
     
@@ -48,13 +44,9 @@ class RemoteBlogPostService: BlogPostService {
             self.addPostTask = nil
         }
         
-        DispatchQueue.global().async {
-            let request = createAddPostRequest(baseUrl: self.baseUrl, post: post)
-            self.addPostTask = URLSession.shared.dataTask(with: request, completionHandler: { data, response, error in
-                let addPostResponse = createAddPostResponse(data: data, response: response, error: error)
-                completionHandler(addPostResponse)
-            })
-            self.addPostTask?.resume()
-        }
+        let request = AddPostRequest(baseUrl: baseUrl, post: post)
+        addPostTask = networkPerformer.dataTask(request: request, completionHandler: completionHandler)
+        addPostTask?.resume()
     }
+    
 }
